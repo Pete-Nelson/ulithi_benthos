@@ -6,3 +6,6 @@
 
 # notes-generate summary stats (range, median, mean, SD) for coral, Montipora, CCA and algal cover by island, year, habitat type
 # also % cover figures for same (box and bar charts)
+
+# what's the right/best data frame to use for this?
+

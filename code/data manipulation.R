@@ -6,12 +6,14 @@
 # requires: data from 'read data.R'
 
 library(lubridate)
+library(janitor)
 levels(temp$category)
 levels(temp$morph_group)
 
 # data wrangling ----
 
-# all corals combined (area and year restricted example)
+# all corals combined 
+# area and year restricted example
 temp %>% 
   filter(region == "ulithi" &
            year(date) == "2016" &
@@ -28,9 +30,34 @@ temp %>%
   count() %>% 
   filter(n > 1)
 
-# shows MANY quadrats with >1 observation of a morph+submorph combination!
-# could be a good cluster to look at (ie separate islands by coral types)
-# consider giving Montipora its own submorph_group (=cabbage?)
+## cooc matrix ----
+# initially grouped by quadrat, but site may be better here (ignoring date for now)
+# s_coral summarises occurrence of coral morphotypes by frequency--the number of times they appear in a transect. What are the advantages/disadvantages of this metric versus summary data that gathers the areal cover of each type? The raw data are % cover for a 0.25 (?) meter quadrat, so we need to give some thought about how that should probably be standardized and transformed. Standardization is necessary to account for varying levels of effort (ie number of times we've sampled a given site mustn't affect our measure of coverage). Percent cover should be easily transformed to an areal measure (square meters), probably better than some proportional indication (% cover).
+s_coral <-
+  temp %>% 
+  filter(region == "ulithi" &
+           year(date) < 2015 &
+           depth_zone == "shallow" & 
+           category == "coral"
+  ) %>% 
+  select(c(2, 4:6, 10:11, 13:15, 18)) %>% 
+  distinct() %>% 
+  group_by(sitecode,
+           morph_group) %>% 
+  summarise(n = n()) %>% 
+  arrange(sitecode, morph_group) %>% 
+  pivot_wider(names_from = morph_group, 
+              values_from = n, 
+              values_fill = 0)
+
+t_coral <-
+  s_coral %>% 
+  t() %>% 
+  row_to_names(1) %>%
+  as.data.frame() %>% 
+  rownames_to_column(var = "morph") %>% 
+  type_convert(trim_ws = T, guess_integer = T) %>% 
+  as_tibble()
 
 ## total coral ----
 total_coral <- temp %>% 
